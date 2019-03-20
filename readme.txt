@@ -4,7 +4,7 @@ Tags: admin, user, users, generate, create, password, passphrase, security
 Requires at least: 3.0
 Requires PHP: 5.3
 Tested up to: 5.1
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,10 +64,16 @@ If you are interested in finding a WP plugin to use 2FA, I recommend
 
 == Changelog ==
 
+= 1.1 =
+* Added user-defined word lists to supplement the default dictionary
+
 = 1.0 =
 * Initial Release
 
 == Upgrade Notice ==
+
+= 1.1 =
+* Added user-defined word lists to supplement the default dictionary
 
 = 1.0 =
 * Initial Release

@@ -28,9 +28,11 @@ class WP_Generate_Passphrase {
 		// Set variable so the class knows how to reference the plugin
 		$this->base_file_path = plugin_basename( $path );
 
+		// Add link in admin area to plugin settings
 		add_action( 'admin_menu', array( &$this, 'define_admin_link' ) );
 
-		add_filter( 'random_password', array( &$this, 'wp_generate_passphrase' ), 20 );
+		// This is what we're here for. Filter `wp_generate_password` with our custom functionality
+		add_filter( 'random_password', array( 'WPGP_Worker', 'wp_generate_passphrase' ), 20 );
 
 	}
 
@@ -98,84 +100,49 @@ class WP_Generate_Passphrase {
 			return;
 		}
 
-		// TODO: DO STUFF WHEN ADMIN PAGE IS SUBMITTED
+		// Process the user's custom list of extra words
+		$arrExtraWords = null;
+		if ( isset( $_POST['ExtraWords'] ) ) {
+			// Catch user input and replace commas & spaces with line breaks
+			$strExtraWords = str_replace( " ", "\n", str_replace( ",", "\n", $_POST['ExtraWords'] ) );
+
+			// Explode input into an array that we can work with
+			$arrExtraWords = explode( "\n", $strExtraWords );
+
+			// Remove all extra white space from each word
+			$arrExtraWords = array_map( 'trim', $arrExtraWords );
+
+			// Filter out any words that fail our tests
+			$arrExtraWords = array_filter( $arrExtraWords, array(&$this, 'validate_user_words') );
+
+			// Do final sanitization on all our values
+			$arrExtraWords = array_map( 'wp_unslash', $arrExtraWords );
+			$arrExtraWords = array_map( 'esc_html', $arrExtraWords );
+		}
+		update_option( "wp_generate_passphrase_extrawords", $arrExtraWords );
+
+		// Show message on admin page
+		add_settings_error( 'WPGP-notices', esc_attr( 'settings_updated' ), esc_html__( 'Settings Saved.', 'wp-generate-passphrase' ), 'updated' );
 
 	}
-
 
 	/**
-	 * This is called when the Option is detected to be empty
-	 * Read the text file included with this plugin and parse it to create our default dictionary
-	 * File originally taken from https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases
+	 * Used to filter word lists for arrays
+	 * If word does not pass all tests, it is filtered out of the results by returning False
+	 *
+	 * @param $str
+	 *
+	 * @return bool
 	 */
-	private function create_option_from_text_file() {
-		$filePath = plugin_dir_path( __DIR__ ) . "includes/eff_large_wordlist.txt";
-		if ( is_file( $filePath ) ) {
-			$words = file( $filePath, FILE_IGNORE_NEW_LINES );
-			update_option( 'wp_generate_passphrase_dictionary', $words );
-		}
+	public function validate_user_words( $str ) {
+
+		// Fail if word is less than N characters long
+		if ( strlen( $str ) < 3 )
+			return false;
+
+		// If we fall through to here, the word is okay
+		return true;
 	}
 
 
-	/**
-	 * Filter handler for the usual results of `wp_generate_password()`
-	 * Throw out whatever it used to be and return a new value
-	 *
-	 * @param $password
-	 *
-	 * @return string
-	 */
-	public function wp_generate_passphrase( $password ) {
-		$password = '';
-
-		$words = $this->get_words();
-		if ( ! $words ) {
-			return 'ERROR:NO_WORDS_FOUND';
-		}
-
-		for ( $x = 1; $x <= 4; $x ++ ) {
-			$password .= $this->get_random_word( $words );
-		}
-
-		return $password;
-	}
-
-
-	/**
-	 * Build our list of words based on the default dictionary plus any custom rules defined by the user
-	 *
-	 * @return mixed
-	 */
-	private function get_words() {
-		$words = get_option( 'wp_generate_passphrase_dictionary' );
-
-		// Self-healing in case the option is empty when we try to access it
-		if ( ! $words ) {
-			$this->create_option_from_text_file();
-			$words = get_option( 'wp_generate_passphrase_dictionary' );
-		}
-
-		// TODO: Add functionality that relies on user input for adding new words, removing words, etc
-
-		return $words;
-	}
-
-
-	/**
-	 * Given an array of words, return a single random one
-	 *
-	 * @param $words
-	 *
-	 * @return mixed
-	 */
-	private function get_random_word( $words ) {
-		$maxIndex = count( $words ) - 1;
-		if ( $maxIndex < 0 ) {
-			return 'ERROR';
-		}
-
-		$randomIndex = wp_rand( 0, $maxIndex );
-
-		return ucfirst( $words[ $randomIndex ] );
-	}
 }
