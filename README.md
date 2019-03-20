@@ -1,5 +1,7 @@
 # [WP Generate Passphrase]
 
+[![Maintainability](https://api.codeclimate.com/v1/badges/540ed1258f107c5d9f2b/maintainability)](https://codeclimate.com/github/dmchale/wp-generate-passphrase/maintainability)
+
 ** This is the public respository for the latest DEVELOPMENT copy of the plugin. There is absolutely no guarantee, 
 express or implied, that the code you find here is a stable build. For official releases, please see the 
 WordPress repository at https://wordpress.org/plugins/wp-generate-passphrase/ (coming soon) **
